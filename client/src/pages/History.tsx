@@ -34,7 +34,6 @@ export default function History() {
                   <th className="px-6 py-4 font-semibold text-sm text-muted-foreground">Maternal HR</th>
                   <th className="px-6 py-4 font-semibold text-sm text-muted-foreground">SpO2</th>
                   <th className="px-6 py-4 font-semibold text-sm text-muted-foreground">Temp</th>
-                  <th className="px-6 py-4 font-semibold text-sm text-muted-foreground">Stress</th>
                   <th className="px-6 py-4 font-semibold text-sm text-muted-foreground">Status</th>
                 </tr>
               </thead>
@@ -62,14 +61,6 @@ export default function History() {
                     </td>
                     <td className="px-6 py-4 text-sm text-foreground">
                       {reading.maternalTemperature?.toFixed(1)}°C
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <div className="w-24 h-2 bg-secondary/20 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-secondary" 
-                          style={{ width: `${reading.stressLevel || 0}%` }}
-                        />
-                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`text-xs font-bold px-2 py-1 rounded-md uppercase ${

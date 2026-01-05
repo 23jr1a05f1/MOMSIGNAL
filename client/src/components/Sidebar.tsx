@@ -26,7 +26,7 @@ export function Sidebar() {
             <HeartPulse className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight leading-none text-foreground">MamaCare</h1>
+            <h1 className="text-xl font-bold tracking-tight leading-none text-foreground">MomSignal</h1>
             <p className="text-xs text-muted-foreground font-medium mt-1">Smart Belt</p>
           </div>
         </div>

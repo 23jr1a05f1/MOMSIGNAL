@@ -90,10 +90,11 @@ export default function Home() {
             status={reading?.maternalTemperature && reading.maternalTemperature > 37.5 ? "warning" : "normal"}
           />
           <StatCard
-            title="Stress Level"
-            value={reading?.stressLevel ?? "--"}
-            unit="/ 100"
-            icon={<BrainCircuit className="w-5 h-5" />}
+            title="Contraction"
+            value={reading?.contractionStatus || "NORMAL"}
+            unit=""
+            icon={<Activity className="w-5 h-5" />}
+            status={(reading?.contractionLevel ?? 0) > 20 ? "warning" : "normal"}
             className="stat-card-gradient"
           />
         </div>
