@@ -8,7 +8,8 @@ import {
   Activity, 
   Baby, 
   BrainCircuit, 
-  Droplets 
+  Droplets,
+  CalendarDays
 } from "lucide-react";
 
 export default function Home() {
@@ -49,6 +50,10 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-3">
+             <div className="px-4 py-2 rounded-full border bg-blue-50 border-blue-200 text-blue-700 flex items-center gap-2">
+               <CalendarDays className="w-4 h-4" />
+               <span className="text-sm font-semibold">EDD: {reading?.edd || "2026-09-01"}</span>
+             </div>
              <div className={`px-4 py-2 rounded-full border flex items-center gap-2 ${
                (stats?.activeAlerts?.length ?? 0) > 0 
                  ? "bg-red-50 border-red-200 text-red-700" 

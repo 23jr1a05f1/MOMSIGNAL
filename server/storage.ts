@@ -27,9 +27,27 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   private highContractionStreak = 0;
   private readonly STREAK_THRESHOLD = 3;
+  private currentEdd = "2026-09-01"; // Default from hardware code
 
   async createReading(reading: InsertReading): Promise<Reading> {
-    const [newReading] = await db.insert(readings).values(reading).returning();
+    // Implement EDD shift logic from hardware: shift 3 days earlier on persistent high contraction
+    if (reading.contractionStatus === 'HIGH') {
+      this.highContractionStreak++;
+    } else {
+      this.highContractionStreak = Math.max(0, this.highContractionStreak - 1);
+    }
+
+    if (this.highContractionStreak >= this.STREAK_THRESHOLD) {
+      const eddDate = new Date(this.currentEdd);
+      eddDate.setDate(eddDate.getDate() - 3);
+      this.currentEdd = eddDate.toISOString().split('T')[0];
+      this.highContractionStreak = 0; // Reset after update
+    }
+
+    const [newReading] = await db.insert(readings).values({
+      ...reading,
+      edd: this.currentEdd
+    }).returning();
     
     // Maternal Heart Rate Alerts
     if (newReading.maternalHeartRate > 120 || newReading.maternalHeartRate < 50) {

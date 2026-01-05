@@ -21,6 +21,7 @@ export const readings = pgTable("readings", {
   // Metadata
   timestamp: timestamp("timestamp").defaultNow(),
   deviceId: text("device_id"),
+  edd: text("edd"), // Estimated Due Date
 });
 
 export const alerts = pgTable("alerts", {
