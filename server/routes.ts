@@ -57,6 +57,38 @@ export async function registerRoutes(
     res.json(alert);
   });
 
+  // === DEMO MODE SIMULATION ===
+  let demoModeEnabled = true;
+  let simulationInterval: NodeJS.Timeout | null = null;
+
+  const startSimulation = () => {
+    if (simulationInterval) return;
+    simulationInterval = setInterval(async () => {
+      if (!demoModeEnabled) return;
+
+      const hr = 70 + Math.floor(Math.random() * 20);
+      const spo2 = 96 + Math.floor(Math.random() * 4);
+      const contraction = Math.random() * 2.5; // Can go high
+      let status = "NORMAL";
+      if (contraction > 2.0) status = "HIGH";
+      else if (contraction > 1.2) status = "MILD";
+      else if (contraction > 0.5) status = "LOW";
+
+      await storage.createReading({
+        maternalHeartRate: hr,
+        maternalSpo2: spo2,
+        maternalTemperature: 36.5 + Math.random(),
+        stressLevel: Math.floor(Math.random() * 30),
+        contractionLevel: contraction * 10, // scale for UI
+        contractionStatus: status,
+        fetalMovementCount: Math.floor(Math.random() * 2),
+        deviceId: "DEMO_MODE"
+      });
+    }, 5000); // New reading every 5 seconds
+  };
+
+  startSimulation();
+
   // === SEED DATA ON STARTUP ===
   await seedDatabase();
 
