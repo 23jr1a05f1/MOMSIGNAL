@@ -25,10 +25,13 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private highContractionStreak = 0;
+  private readonly STREAK_THRESHOLD = 3;
+
   async createReading(reading: InsertReading): Promise<Reading> {
     const [newReading] = await db.insert(readings).values(reading).returning();
     
-    // Simple alert logic check
+    // Maternal Heart Rate Alerts
     if (newReading.maternalHeartRate > 120 || newReading.maternalHeartRate < 50) {
       await this.createAlert({
         readingId: newReading.id,
@@ -39,6 +42,7 @@ export class DatabaseStorage implements IStorage {
       });
     }
     
+    // SpO2 Alerts
     if (newReading.maternalSpo2 < 95) {
       await this.createAlert({
         readingId: newReading.id,
@@ -49,14 +53,28 @@ export class DatabaseStorage implements IStorage {
       });
     }
 
+    // Improved Contraction Logic: Streak-based to reduce false positives from single movements
     if (newReading.contractionStatus === 'HIGH') {
-      await this.createAlert({
-        readingId: newReading.id,
-        type: 'CONTRACTION_ALERT',
-        message: `High contraction level detected. Monitor closely.`,
-        severity: 'warning',
-        isResolved: false
-      });
+      this.highContractionStreak++;
+    } else if (newReading.contractionStatus === 'NORMAL' || newReading.contractionStatus === 'LOW') {
+      // Allow for small gaps but reset on clearly normal movement
+      this.highContractionStreak = Math.max(0, this.highContractionStreak - 1);
+    }
+
+    if (this.highContractionStreak >= this.STREAK_THRESHOLD) {
+      // Check if alert already exists recently to avoid spam
+      const activeAlerts = await this.getActiveAlerts();
+      const hasRecentAlert = activeAlerts.some(a => a.type === 'CONTRACTION_ALERT');
+      
+      if (!hasRecentAlert) {
+        await this.createAlert({
+          readingId: newReading.id,
+          type: 'CONTRACTION_ALERT',
+          message: `Persistent high contraction levels detected. This may indicate active labour.`,
+          severity: 'critical',
+          isResolved: false
+        });
+      }
     }
 
     return newReading;
