@@ -66,17 +66,18 @@ export async function registerRoutes(
     simulationInterval = setInterval(async () => {
       if (!demoModeEnabled) return;
 
-      const hr = 70 + Math.floor(Math.random() * 20);
-      const spo2 = 96 + Math.floor(Math.random() * 4);
-      const contraction = Math.random() * 2.5; // Can go high
+      const hr = 60 + Math.floor(Math.random() * 40);
+      const spo2 = 95 + Math.floor(Math.random() * 6) - 5;
+      const contraction = Math.random() * 2.5;
       let status = "NORMAL";
-      if (contraction > 2.0) status = "HIGH";
-      else if (contraction > 1.2) status = "MILD";
-      else if (contraction > 0.5) status = "LOW";
+      if (contraction < 0.5) status = "NORMAL";
+      else if (contraction < 1.2) status = "LOW";
+      else if (contraction < 2.0) status = "MILD";
+      else status = "HIGH";
 
       await storage.createReading({
         maternalHeartRate: hr,
-        maternalSpo2: spo2,
+        maternalSpo2: Math.min(100, Math.max(50, spo2)),
         maternalTemperature: 36.5 + Math.random(),
         stressLevel: Math.floor(Math.random() * 30),
         contractionLevel: contraction * 10, // scale for UI
