@@ -5,6 +5,7 @@
 #include "heartRate.h"
 #include <LiquidCrystal_I2C.h>
 
+// I2C Address for LCD
 LiquidCrystal_I2C lcd(0x3F, 16, 2); 
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
 MAX30105 pulseSensor;
@@ -18,17 +19,19 @@ int spo2 = 95;
 String labourStatus;
 long lastBeatTime = 0;
 
-// EDD Variables
+// Estimated Due Date (EDD) Variables
 int eddDay = 1;
 int eddMonth = 9;
 int eddYear = 2026;
 unsigned long lastEDDupdate = 0;
 int highStreak = 0;
 
+// Constants from simulation
 const unsigned long EDD_UPDATE_MIN_INTERVAL = 60000UL;
 const int HIGH_STREAK_REQUIRED = 3;
 const int EDD_SHIFT_DAYS_ON_HIGH = 3;
 
+// Logic to classify contraction intensity
 String classifyContraction(float value) {
   if (value < 0.5) return "NORMAL";
   else if (value < 1.2) return "LOW";
@@ -36,6 +39,7 @@ String classifyContraction(float value) {
   else return "HIGH";
 }
 
+// Logic to shift EDD days earlier
 void shiftEDDdays(int n) {
   if (n == 0) return;
 
@@ -66,6 +70,7 @@ void shiftEDDdays(int n) {
   }
 }
 
+// Check for labour and update EDD
 void tryUpdateEDD_BasedOnHigh() {
   unsigned long now = millis();
 
@@ -87,12 +92,12 @@ void tryUpdateEDD_BasedOnHigh() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("Starting Pregnancy Belt System...");
+  Serial.println("Starting MomSignal Smart Belt...");
 
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
 
-  // LCD
+  // LCD Initialization
   lcd.init();
   lcd.backlight();
   lcd.clear();
@@ -100,16 +105,18 @@ void setup() {
   lcd.print("System Ready");
   delay(1000);
 
-  // ADXL345 Init
-  if (!accel.begin()) Serial.println("ADXL345 NOT FOUND");
-  else {
+  // ADXL345 Initialization
+  if (!accel.begin()) {
+    Serial.println("ADXL345 NOT FOUND");
+  } else {
     accel.setRange(ADXL345_RANGE_4_G);
     Serial.println("ADXL345 Ready");
   }
 
-  // MAX30105 Init
-  if (!pulseSensor.begin()) Serial.println("MAX30105 NOT FOUND");
-  else {
+  // MAX30105 Initialization
+  if (!pulseSensor.begin()) {
+    Serial.println("MAX30105 NOT FOUND");
+  } else {
     pulseSensor.setup();
     pulseSensor.setPulseAmplitudeRed(0xAF);
     pulseSensor.setPulseAmplitudeIR(0xAF);
@@ -120,7 +127,7 @@ void setup() {
 }
 
 void loop() {
-  // -------- ADXL345 --------
+  // -------- ADXL345 Acceleration Sensing --------
   sensors_event_t event;
   accel.getEvent(&event);
 
@@ -128,34 +135,32 @@ void loop() {
   lastZ = event.acceleration.z;
   labourStatus = classifyContraction(contractionLevel);
 
-  // -------- MAX30105 --------
+  // -------- MAX30105 Pulse Sensing --------
   long irValue = pulseSensor.getIR();
   long redValue = pulseSensor.getRed();
 
   if (irValue > 2000) {
-    // Note: checkForBeat is from heartRate.h
-    // if (checkForBeat(irValue)) { ... }
-    
-    // Fallback simulation for when sensor is not active
+    // Basic BPM calculation placeholder
+    // In a real device, you'd use checkForBeat(irValue) from heartRate.h
     heartRate = 70 + random(-5, 5);
     spo2 = 98 + random(-2, 2);
   } else {
-    // Simulation when no finger is detected
+    // Simulation fallback when no sensor data
     heartRate = 60 + random(0, 40);
     spo2 = 95 + random(-5, 5);
   }
 
-  // -------- EDD Update --------
+  // -------- EDD Update Logic --------
   tryUpdateEDD_BasedOnHigh();
 
-  // -------- Buzzer --------
+  // -------- Buzzer Alarm --------
   if (labourStatus == "HIGH") {
     tone(BUZZER_PIN, 2000);
   } else {
     noTone(BUZZER_PIN);
   }
 
-  // -------- LCD Display --------
+  // -------- LCD Display Update --------
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(labourStatus); 
@@ -170,7 +175,7 @@ void loop() {
   lcd.print("/");
   lcd.print(eddMonth);
 
-  // -------- Serial Output --------
+  // -------- Serial Output for Monitoring --------
   Serial.print("Contraction: "); Serial.print(contractionLevel, 2);
   Serial.print(" | Status: "); Serial.print(labourStatus);
   Serial.print(" | HR: "); Serial.print(heartRate);
