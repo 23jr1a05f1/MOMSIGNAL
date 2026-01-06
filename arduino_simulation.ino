@@ -5,7 +5,7 @@
 #include "heartRate.h"
 #include <LiquidCrystal_I2C.h>
 
-// I2C Address for LCD
+// I2C Address for LCD (commonly 0x27 or 0x3F)
 LiquidCrystal_I2C lcd(0x3F, 16, 2); 
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
 MAX30105 pulseSensor;
@@ -26,12 +26,12 @@ int eddYear = 2026;
 unsigned long lastEDDupdate = 0;
 int highStreak = 0;
 
-// Constants from simulation
+// Constants from health monitoring logic
 const unsigned long EDD_UPDATE_MIN_INTERVAL = 60000UL;
 const int HIGH_STREAK_REQUIRED = 3;
 const int EDD_SHIFT_DAYS_ON_HIGH = 3;
 
-// Logic to classify contraction intensity
+// Logic to classify contraction intensity based on movement
 String classifyContraction(float value) {
   if (value < 0.5) return "NORMAL";
   else if (value < 1.2) return "LOW";
@@ -39,7 +39,7 @@ String classifyContraction(float value) {
   else return "HIGH";
 }
 
-// Logic to shift EDD days earlier
+// Logic to shift EDD days (handles month/year rollover)
 void shiftEDDdays(int n) {
   if (n == 0) return;
 
@@ -70,7 +70,7 @@ void shiftEDDdays(int n) {
   }
 }
 
-// Check for labour and update EDD
+// Check for labor progression and update EDD
 void tryUpdateEDD_BasedOnHigh() {
   unsigned long now = millis();
 
@@ -127,7 +127,7 @@ void setup() {
 }
 
 void loop() {
-  // -------- ADXL345 Acceleration Sensing --------
+  // -------- ADXL345 Sensing --------
   sensors_event_t event;
   accel.getEvent(&event);
 
@@ -135,32 +135,29 @@ void loop() {
   lastZ = event.acceleration.z;
   labourStatus = classifyContraction(contractionLevel);
 
-  // -------- MAX30105 Pulse Sensing --------
+  // -------- MAX30105 Sensing --------
   long irValue = pulseSensor.getIR();
-  long redValue = pulseSensor.getRed();
-
   if (irValue > 2000) {
-    // Basic BPM calculation placeholder
-    // In a real device, you'd use checkForBeat(irValue) from heartRate.h
+    // Placeholder for actual heart rate and spo2 logic
     heartRate = 70 + random(-5, 5);
     spo2 = 98 + random(-2, 2);
   } else {
-    // Simulation fallback when no sensor data
+    // Fallback values when sensor is not active
     heartRate = 60 + random(0, 40);
     spo2 = 95 + random(-5, 5);
   }
 
-  // -------- EDD Update Logic --------
+  // -------- Labor Logic --------
   tryUpdateEDD_BasedOnHigh();
 
-  // -------- Buzzer Alarm --------
+  // -------- Alerts --------
   if (labourStatus == "HIGH") {
     tone(BUZZER_PIN, 2000);
   } else {
     noTone(BUZZER_PIN);
   }
 
-  // -------- LCD Display Update --------
+  // -------- LCD Update --------
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(labourStatus); 
@@ -175,7 +172,7 @@ void loop() {
   lcd.print("/");
   lcd.print(eddMonth);
 
-  // -------- Serial Output for Monitoring --------
+  // -------- Serial Logging (replacing cout) --------
   Serial.print("Contraction: "); Serial.print(contractionLevel, 2);
   Serial.print(" | Status: "); Serial.print(labourStatus);
   Serial.print(" | HR: "); Serial.print(heartRate);
